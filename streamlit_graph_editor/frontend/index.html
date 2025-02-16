@@ -246,7 +246,7 @@
 
             if (action === "addNode") {
                 form.innerHTML += `<label>Node Label: </label><input type="text" id="nodeLabel"><br>`;
-                form.innerHTML += `<label>[Optional]Parent Node: </label><select id="parentNode">${generateNodeOptions()}</select><br>`;
+                form.innerHTML += `<label>[Optional]Parent Node: </label><select id="parentNode">${generateNodeOptions(include_null=true)}</select><br>`;
             } else if (action === "deleteNode") {
                 form.innerHTML += `<label>Select Node: </label><select id="deleteNode">${generateNodeOptions()}</select><br>`;
                 if (isTreeMode) {
@@ -330,8 +330,13 @@
         }
 
 
-        function generateNodeOptions() {
-            return nodes.get().map(n => `<option value="${n.id}">${n.label}</option>`).join("");
+        function generateNodeOptions(include_null=false) {
+            let options = include_null ? `<option value="">(None)</option>` : "";
+
+            options += nodes.get().map(n => `<option value="${n.id}">${n.label}</option>`).join("");
+            //console.log("Options = ")
+            //console.log(options)
+            return options;
         }
 
         function closePopup() {
