@@ -129,6 +129,44 @@
         let user_actions = null;
         let node_attribute_keys = null;
 
+        function setNodeColors() {
+
+            let inDegree = {};
+            let outDegree = {};
+
+            // ✅ Get a copy of nodes and edges as plain arrays
+            let nodesArray = nodes.get();
+            let edgesArray = edges.get();
+
+            // Initialize degree tracking
+            nodesArray.forEach(node => {
+                inDegree[node.id] = 0;
+                outDegree[node.id] = 0;
+            });
+
+            // Calculate in-degree and out-degree
+            edgesArray.forEach(edge => {
+                outDegree[edge.from] = (outDegree[edge.from] || 0) + 1;
+                inDegree[edge.to] = (inDegree[edge.to] || 0) + 1;
+            });
+
+            // Assign colors based on degree
+            nodesArray.forEach(node => {
+                if (inDegree[node.id] === 0) {
+                    node.color = { background: 'purple', border: 'black' };
+                    node.font = { color: 'white' };
+                } else if (outDegree[node.id] === 0) {
+                    node.color = { background: 'green', border: 'black' };
+                    node.font = { color: 'black' };
+                } else {
+                    node.color = { background: 'orange', border: 'black' };
+                    node.font = { color: 'white' };
+                }
+            });
+
+            nodes.update(nodesArray)
+        }
+
         function initializeGraph(graphData, actions, treeMode, nodeAttributeKeys, graphTitle="Untitled graph", directed=true) {
             isTreeMode = treeMode;
             user_actions = actions;
@@ -141,7 +179,9 @@
                 // In such cases, we should not lose precious graph state by reinitializing things. Hence the IF check.
                 nodes = new vis.DataSet(graphData.nodes);
                 edges = new vis.DataSet(graphData.edges);
+                setNodeColors()
             }
+
             let container = document.getElementById("user_graph");
             let data = { nodes: nodes, edges: edges };
             
@@ -219,8 +259,8 @@
             });
 
             // Call exportGraph() whenever nodes or edges change
-            nodes.on("*", exportGraph);
-            edges.on("*", exportGraph);
+            //nodes.on("*", exportGraph);
+            //edges.on("*", exportGraph);
 
             // Finalize the height and fit the graph
             Streamlit.setFrameHeight(1000);
@@ -371,12 +411,14 @@
                     return;
                 }
 
-                nodes.add({ id: nodeId, label: nodeLabel });
+                nodes.add({ 
+                    id: nodeId, 
+                    label: nodeLabel
+                });
+
                 if (parent) {
                     edges.add({ from: parent, to: nodeId });
                 }
-                
-                network.redraw();
 
             } else if (selectedAction === "deleteNode") {
                 
@@ -442,7 +484,7 @@
             } else if (selectedAction == 'editNodeAttributes') {
                 setNodeAttributes();
             }
-
+            exportGraph()
             closePopup();
         }
 
@@ -451,10 +493,14 @@
         }
 
         function exportGraph() {
+
+            setNodeColors();
+
             let graphJson = {
                 nodes: nodes.get(),
                 edges: edges.get()
             };
+            
             Streamlit.setComponentValue(graphJson);
         }
 
