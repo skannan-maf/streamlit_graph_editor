@@ -7,7 +7,7 @@
     <style>
         #user_graph {
             width: 90%;
-            height: 900px;
+            height: 1400px;
             border: 1px solid black;
         }
         /* 🌈 Context Menu - Modern Style */
@@ -128,8 +128,38 @@
         let isTreeMode = false; // Tree validation mode
         let user_actions = null;
         let node_attribute_keys = null;
+        let max_chars = 8;
+        let node_font_size = 32;
+        let max_depth=5
 
-        function setNodeColors() {
+        function centerPadLabel(text, N = 20) {
+            let totalPadding = Math.max(N - text.length, 0);  // ✅ Prevent negative padding
+            let leftPadding = Math.floor(totalPadding / 2);
+            let rightPadding = totalPadding - leftPadding;  // ✅ Ensures right padding adjusts for odd `N`
+            
+            return text.padStart(text.length + leftPadding, "\u00A0").padEnd(N, "\u00A0"); //NOTE: Use non-breaking space that does not break monospace font width
+        }
+
+        function enhanceNode(node) {
+
+            if (!node.label_full) {
+                // ✅ Backup full label inside `label_full`
+                node.label_full = node.label;
+            }
+
+            // ✅ Trim label to max characters + "..."
+            node.label = node.label_full.length > max_chars ? node.label_full.substring(0, max_chars-3) + "..." : centerPadLabel(node.label_full, N=max_chars);
+
+            // if (node.label_full.length > 1) {
+            //     console.log("Modified label has length:")
+            //     console.log(node.label.length)
+            // }
+            node.title = generateTooltip(node)
+
+            return node;  // ✅ Return modified object (not a new one)
+        }
+
+        function enhanceGraph() {
 
             let inDegree = {};
             let outDegree = {};
@@ -157,11 +187,16 @@
                     node.font = { color: 'white' };
                 } else if (outDegree[node.id] === 0) {
                     node.color = { background: 'green', border: 'black' };
-                    node.font = { color: 'black' };
+                    node.font = { color: 'white' };
                 } else {
                     node.color = { background: 'orange', border: 'black' };
-                    node.font = { color: 'white' };
+                    node.font = { color: 'black' };
                 }
+            });
+
+            // Generate tooltips and trim the labels
+            nodesArray.forEach(node => {
+                enhanceNode(node)
             });
 
             nodes.update(nodesArray)
@@ -171,7 +206,7 @@
             isTreeMode = treeMode;
             user_actions = actions;
             node_attribute_keys = nodeAttributeKeys;
-            
+
             document.getElementById('graph_title').innerText = graphTitle
 
             if (!nodes) {
@@ -179,19 +214,25 @@
                 // In such cases, we should not lose precious graph state by reinitializing things. Hence the IF check.
                 nodes = new vis.DataSet(graphData.nodes);
                 edges = new vis.DataSet(graphData.edges);
-                setNodeColors()
+                enhanceGraph()
             }
 
             let container = document.getElementById("user_graph");
             let data = { nodes: nodes, edges: edges };
+            
+            node_size = max_chars * node_font_size;
             
             let hierarchical_layout = {
                 hierarchical: {
                     enabled: true,
                     direction: "UD",
                     sortMethod: "directed",
-                    nodeSpacing: 200, 
-                    treeSpacing: 300
+                    nodeSpacing: node_size*2,
+                    treeSpacing: node_size*3 + max_depth*10,
+                    levelSeparation: node_size*1.5, //*2 + max_depth*5,
+                    blockShifting: true,
+                    edgeMinimization: true,
+                    parentCentralization: true
                 }
             };
 
@@ -215,7 +256,11 @@
 
             let options = {
                 layout:  treeMode ? hierarchical_layout : non_hierarchical_layout,
-                physics: !treeMode,
+                physics: {
+                    enabled : !treeMode,
+                    solver: "forceAtlas2Based",
+                    stabilization: { iterations: 200 }
+                },
                 interaction: { 
                     dragNodes: true, 
                     zoomView: true,
@@ -226,15 +271,27 @@
                 },
                 nodes: {
                     shape: "circle",
-                    size: 30,
+                    //size: node_size,
                     font : {
-                        size: 42,
-                        color: "#ffffff"
+                        size: node_font_size,
+                        color: "#ffffff",
+                        face: "Menlo", //NOTE: Use a mono-space font to maintain node size
+                        align: "center"
                     },
                     color: { 
                         background: "#007bff", 
                         border: "#004080" 
-                    }
+                    },
+                    scaling: {
+                        label: {
+                            enabled: false  // ✅ Prevents label from shrinking or growing
+                        }
+                    },
+                    widthConstraint: { minimum: node_size, maximum: node_size },
+                    heightConstraint: { minimum: node_size},
+                    // fixed: { x: false, y: false },  // ✅ Prevents automatic resizing based on label
+                    // scaling: { label: false },
+                    //widthConstraint: { minimum: 50, maximum: 50 }
                 },
                 edges: directed ? directed_edge : undirected_edge
             };
@@ -263,9 +320,8 @@
             //edges.on("*", exportGraph);
 
             // Finalize the height and fit the graph
-            Streamlit.setFrameHeight(1000);
+            Streamlit.setFrameHeight(1500);
             network.fit()
-
         }
 
         function showContextMenu(event) {
@@ -356,9 +412,13 @@
             }
         }
 
-
         function generateTooltip(node) {
-            let tooltip = `${node.label}`;
+            
+            if (!node.label_full) {
+                node.label_full = node.label
+            }
+            
+            let tooltip = `${node.label_full}`;
             
             if (node.attributes && (Object.keys(node.attributes).length > 0)) {
                 tooltip += "\nAttributes:";
@@ -369,13 +429,23 @@
             return tooltip;
         }
 
-
         function generateNodeOptions(include_null=false) {
-            let options = include_null ? `<option value="">(None)</option>` : "";
 
-            options += nodes.get().map(n => `<option value="${n.id}">${n.label}</option>`).join("");
-            //console.log("Options = ")
-            //console.log(options)
+            let options = "";
+            let nodesArray = nodes.get();
+
+            if (selectedNode) {
+                let selectedNodeObj = nodesArray.find(n => n.id === selectedNode);
+                if (selectedNodeObj) {
+                    options += `<option value="${selectedNodeObj.id}" selected>${selectedNodeObj.label_full}</option>`;
+                    nodesArray = nodesArray.filter(n => n.id !== selectedNode);
+                }
+            }
+            
+            options += include_null ? `<option value="">(None)</option>` : "";
+            
+            options += nodesArray.map(n => `<option value="${n.id}">${n.label_full}</option>`).join("");
+            
             return options;
         }
 
@@ -447,9 +517,6 @@
 
                         edges.remove(edgesToDelete.map(edge => edge.id));  // ✅ Remove edges first
                         nodes.remove(toRemove);  // ✅ Then remove the nodes
-
-                        //exportGraph();  // ✅ Sync with Streamlit
-                        //network.redraw();  // ✅ Refresh UI
                     } else {
                         alert("🚨 No subtree found for deletion!");
                     }
@@ -508,7 +575,7 @@
 
         function exportGraph() {
 
-            setNodeColors();
+            enhanceGraph();
 
             let graphJson = {
                 nodes: nodes.get(),
@@ -516,6 +583,8 @@
             };
             
             Streamlit.setComponentValue(graphJson);
+
+            network.fit()
         }
 
         Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, function (event) {
