@@ -467,6 +467,7 @@
                 }
 
             } else if (selectedAction === "deleteEdge") {
+
                 let source = document.getElementById("edgeSource").value;
                 let target = document.getElementById("edgeTarget").value;
                 
@@ -484,7 +485,20 @@
             } else if (selectedAction == 'editNodeAttributes') {
                 setNodeAttributes();
             }
+
+            //
+            // Earlier, we used to call this implicitly through "nodes.on('*', exportGraph)" and "edges.on('*', exportGraph)"
+            // But since graph additions/deletions are non-atomic (we remove from nodes first and then from edges next etc.),
+            // we prefer to do this at the end after all changes to graph data structure are settled
+            // Also --> Changes in graph structure also changes color of nodes and we dont want to mutate node attributes when
+            // the nodes datastructure itself is undergoing change. This causes race conditions and inconsistent behavior
+            //
+            // Takeaway:
+            // In this function, do not return prematuredly. Function has to be exited through this path so that we export
+            // the graph back to Streamlit
+            //
             exportGraph()
+
             closePopup();
         }
 
