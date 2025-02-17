@@ -1,23 +1,8 @@
 import streamlit as st
 import networkx as nx
-from streamlit_graph_editor import graph_editor 
+from streamlit_graph_editor import graph_editor, from_networkx, to_networkx
 
 st.set_page_config(layout="wide")
-
-# 🔹 Helper function: Convert `networkx.Graph` to JSON format for `vis-network`
-def from_networkx(graph: nx.DiGraph):
-    nodes = [{"id": str(n), "label": str(n), "attributes": graph.nodes[n] } for n in graph.nodes()]
-    edges = [{"from": str(u), "to": str(v)} for u, v in graph.edges()]
-    return {"nodes": nodes, "edges": edges}
-
-# 🔹 Helper function: Convert JSON output from Streamlit component back to `networkx.Graph`
-def to_networkx(graph_data):
-    G = nx.DiGraph()
-    for node in graph_data["nodes"]:
-        G.add_node(node["id"], **(node.get("attributes") or {}))
-    for edge in graph_data["edges"]:
-        G.add_edge(edge["from"], edge["to"])
-    return G
 
 # 🔹 Define an example graph using `networkx`
 G = nx.DiGraph()  # Use `nx.Graph()` for an undirected graph
