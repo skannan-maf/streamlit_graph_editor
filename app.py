@@ -12,11 +12,15 @@ G.add_edges_from([
     ("2", "4"),
 ])
 
+# Create node attributes
+G.nodes['1'].update({'Name': 'Number 1', 'Owner': 'Main', 'Email': 'a@a.com'})
+G.nodes['2'].update({'Name': 'Number 2', 'Owner': 'Train'})
+
 # Convert the `networkx` graph to JSON format
 initial_graph = from_networkx(G)
 
 # Define allowed node attribute keys
-node_attribute_keys = ["Owner", "Email", "Department"]  # ✅ Specify keys
+node_attribute_keys = ["Name", "Owner", "Email", "Department"]  # ✅ Specify keys
 
 user_graph = graph_editor(
                 graph_data=initial_graph,
@@ -35,3 +39,5 @@ if user_graph:
     st.subheader("Re-loaded as NetworkX Graph")
     st.write(':blue[Edge list]')
     st.write(edited_graph.edges)
+    for node in edited_graph.nodes:
+        st.write('Attributes for node {} = {}'.format(node, edited_graph.nodes[node]))
