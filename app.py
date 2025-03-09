@@ -23,7 +23,7 @@ user_graph = graph_editor(
                 tree_mode=True, 
                 is_directed=False,
                 node_attribute_keys=node_attribute_keys,
-                title="The origin of time", 
+                title="Origin",
                 key="graph_editor"
             )
 
@@ -33,4 +33,5 @@ if user_graph:
     st.json(user_graph)
     edited_graph = to_networkx(user_graph)
     st.subheader("Re-loaded as NetworkX Graph")
+    st.write(':blue[Edge list]')
     st.write(edited_graph.edges)
