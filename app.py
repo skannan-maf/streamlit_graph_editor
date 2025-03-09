@@ -18,22 +18,10 @@ initial_graph = from_networkx(G)
 # Define allowed node attribute keys
 node_attribute_keys = ["Owner", "Email", "Department"]  # ✅ Specify keys
 
-# Allowed user actions
-allowed_actions = {
-    "add_node": True,
-    "add_child_node": True,
-    "add_edge": True,
-    "delete_edge": True,
-    "delete_node": True,
-    "delete_subtree": True,
-    "add_node_attribute": True,
-    "delete_node_attribute": True
-}
-
 user_graph = graph_editor(
-                graph_data=initial_graph, 
-                actions=allowed_actions, 
-                treeMode=True, 
+                graph_data=initial_graph,
+                tree_mode=True, 
+                is_directed=False,
                 node_attribute_keys=node_attribute_keys,
                 title="The origin of time", 
                 key="graph_editor"

@@ -1,0 +1,104 @@
+#user_graph {
+    width: 90%;
+    height: 1400px;
+    border: 1px solid black;
+}
+
+/* 🌈 Context Menu - Modern Style */
+#contextMenu {
+    display: none;
+    position: absolute;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+    padding: 8px;
+    z-index: 1000;
+    border: 2px solid #007bff;
+    min-width: 150px;
+}
+
+.menu-item {
+    padding: 8px 15px;
+    font-family: "Arial", sans-serif;
+    font-size: 20px;
+    font-weight: bold;
+    color: #007bff;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease-in-out;
+}
+
+.menu-item:hover {
+    background: #007bff;
+    color: white;
+}
+
+/* 🌟 Pop-up Modal - Modern Look */
+#popupForm {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 1001;
+    width: 300px;
+    text-align: center;
+    border: 2px solid #007bff;
+}
+
+/* ✨ Popup Title */
+#popupTitle {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+/* 🖍 Form Inputs */
+#popupContent input,
+#popupContent select {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 20px;
+}
+
+/* 🎨 Stylish Buttons */
+button {
+    padding: 10px 15px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.3s ease-in-out;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+button:first-of-type {
+    background-color: #007bff;
+}
+
+button:last-of-type {
+    background-color: #ff4444;
+}
+
+.vis-tooltip {
+    font-size: 16px !important;  /* ✅ Increase tooltip font size */
+    background-color: rgba(0, 0, 0, 0.8);  /* ✅ Darker background */
+    color: white;  /* ✅ White text */
+    padding: 8px;  /* ✅ More padding for readability */
+    border-radius: 5px;  /* ✅ Rounded corners */
+}

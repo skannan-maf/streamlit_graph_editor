@@ -4,102 +4,7 @@
     <title>Interactive Graph Editor</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/standalone/umd/vis-network.min.js"></script>
     <script src="./streamlit-component-lib.js"></script>
-    <style>
-        #user_graph {
-            width: 90%;
-            height: 1400px;
-            border: 1px solid black;
-        }
-        /* 🌈 Context Menu - Modern Style */
-        #contextMenu {
-            display: none;
-            position: absolute;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
-            padding: 8px;
-            z-index: 1000;
-            border: 2px solid #007bff;
-            min-width: 150px;
-        }
-        .menu-item {
-            padding: 8px 15px;
-            font-family: "Arial", sans-serif;
-            font-size: 20px;
-            font-weight: bold;
-            color: #007bff;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.3s ease-in-out;
-        }
-        .menu-item:hover {
-            background: #007bff;
-            color: white;
-        }
-        /* 🌟 Pop-up Modal - Modern Look */
-        #popupForm {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
-            z-index: 1001;
-            width: 300px;
-            text-align: center;
-            border: 2px solid #007bff;
-        }
-        /* ✨ Popup Title */
-        #popupTitle {
-            font-size: 24px;
-            font-weight: bold;
-            color: #007bff;
-            margin-bottom: 10px;
-        }
-        /* 🖍 Form Inputs */
-        #popupContent input,
-        #popupContent select {
-            width: 100%;
-            padding: 8px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 20px;
-        }
-        /* 🎨 Stylish Buttons */
-        button {
-            padding: 10px 15px;
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: all 0.3s ease-in-out;
-        }
-        button:hover {
-            opacity: 0.8;
-        }
-        button:first-of-type {
-            background-color: #007bff;
-        }
-        button:last-of-type {
-            background-color: #ff4444;
-        }
-        .vis-tooltip {
-            font-size: 16px !important;  /* ✅ Increase tooltip font size */
-            background-color: rgba(0, 0, 0, 0.8);  /* ✅ Darker background */
-            color: white;  /* ✅ White text */
-            padding: 8px;  /* ✅ More padding for readability */
-            border-radius: 5px;  /* ✅ Rounded corners */
-        }
-
-    </style>
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
     <h1 id="graph_title" style="text-align: center; margin-bottom: 10px; color:blue"></h1>
@@ -125,9 +30,9 @@
         let edges = null;
         let selectedNode = null;
         let selectedAction = null;
-        let isTreeMode = false; // Tree validation mode
-        let user_actions = null;
-        let node_attribute_keys = null;
+        let gIsTreeMode = false; // Tree validation mode
+        let gIsDirected = null;
+        let gNodeAttributeKeys = null;
         let max_chars = 8;
         let node_font_size = 32;
         let max_depth=5
@@ -202,10 +107,17 @@
             nodes.update(nodesArray)
         }
 
-        function initializeGraph(graphData, actions, treeMode, nodeAttributeKeys, graphTitle="Untitled graph", directed=true) {
-            isTreeMode = treeMode;
-            user_actions = actions;
-            node_attribute_keys = nodeAttributeKeys;
+        function initializeGraph(
+                graphData, 
+                treeMode, 
+                isDirected, 
+                nodeAttributeKeys, 
+                graphTitle="Untitled graph"
+            ) {
+            
+            gIsTreeMode = treeMode;
+            gNodeAttributeKeys = nodeAttributeKeys;
+            gIsDirected = isDirected;
 
             document.getElementById('graph_title').innerText = graphTitle
 
@@ -293,7 +205,7 @@
                     // scaling: { label: false },
                     //widthConstraint: { minimum: 50, maximum: 50 }
                 },
-                edges: directed ? directed_edge : undirected_edge
+                edges: isDirected ? directed_edge : undirected_edge
             };
 
             network = new vis.Network(container, data, options);
@@ -345,7 +257,7 @@
                 form.innerHTML += `<label>[Optional]Parent Node: </label><select id="parentNode">${generateNodeOptions(include_null=true)}</select><br>`;
             } else if (action === "deleteNode") {
                 form.innerHTML += `<label>Select Node: </label><select id="deleteNode">${generateNodeOptions()}</select><br>`;
-                if (isTreeMode) {
+                if (gIsTreeMode) {
                     form.innerHTML += `<label>Delete subtree?</label><input type="checkbox" id="deleteSubtree"><br>`;
                 }
             } else if (action === "addEdge") {
@@ -355,12 +267,12 @@
                 form.innerHTML += `<label>Select Source Node: </label><select id="edgeSource">${generateNodeOptions()}</select><br>`;
                 form.innerHTML += `<label>Select Target Node: </label><select id="edgeTarget">${generateNodeOptions()}</select><br>`;
             } else if (action === "editNodeAttributes") {
-                if (node_attribute_keys.length === 0) {
+                if (gNodeAttributeKeys.length === 0) {
                     // ✅ If no attribute keys, show message instead of inputs
                     form.innerHTML = `<p style="color: gray; font-size: 20px;">No attribute specification passed.</p>`;
                 } else {
                     form.innerHTML += `<label>Select Node: </label><select id="attributeNode">${generateNodeOptions()}</select><br>`;
-                    node_attribute_keys.forEach(key => {
+                    gNodeAttributeKeys.forEach(key => {
                         form.innerHTML += `<label>${key}: </label><input type="text" id="node_attr_${key}" placeholder="Enter ${key}"><br>`;
                     });
                     //form.innerHTML += `<label>Attributes: </label><input type="text" id="nodeAttributes"><br>`;
@@ -387,7 +299,7 @@
             let nodeId = document.getElementById("attributeNode").value;
             let node = nodes.get(nodeId);
             //document.getElementById("nodeAttributes").value = node.attributes;
-            node_attribute_keys.forEach(key => {
+            gNodeAttributeKeys.forEach(key => {
                 document.getElementById(`node_attr_${key}`).value = node.attributes?.[key] || null;
             });
         }
@@ -400,7 +312,7 @@
                 let attributes = {};
 
                 // ✅ Read each attribute from the pop-up form
-                node_attribute_keys.forEach(key => {
+                gNodeAttributeKeys.forEach(key => {
                     let value = document.getElementById(`node_attr_${key}`).value.trim();
                     attributes[key] = value !== "" ? value : null;  // ✅ Use null if empty
                 });
@@ -455,7 +367,7 @@
 
         function getSubtreeNodes(nodeId) {
             // Get subtree nodes of a Node, including that Node.
-            console.assert(isTreeMode==true, "getSubtreeNodes called in a non-tree environment");
+            console.assert(gIsTreeMode==true, "getSubtreeNodes called in a non-tree environment");
 
             let subtreeNodes = new Set();  // ✅ Use a Set to avoid duplicates
             function traverse(node) {
@@ -521,13 +433,28 @@
                         alert("🚨 No subtree found for deletion!");
                     }
                 }
-
             } else if (selectedAction === "addEdge") {
                 
                 let source = document.getElementById("sourceNode").value;
                 let target = document.getElementById("targetNode").value;
                 
-                if (isTreeMode && hasParent(target)) {
+                // Check for existing edge
+                let existingEdge = edges.get({
+                    filter: function (edge) {
+                        if (gIsDirected) {
+                            return (edge.from === source && edge.to === target);
+                        } else {
+                            return (edge.from === source && edge.to === target) || (edge.from === target && edge.to === source);
+                        }
+                    }
+                });
+                if (existingEdge.length > 0) {
+                    alert("Edge already exists!");
+                    return;
+                }
+
+                // Enforce tree mode if asked to before adding the edge
+                if (gIsTreeMode && hasParent(target)) {
                     alert("Tree mode: A node can only have one parent!");
                 } else if (source !== target) {
                     edges.add({ from: source, to: target });
@@ -537,13 +464,22 @@
 
                 let source = document.getElementById("edgeSource").value;
                 let target = document.getElementById("edgeTarget").value;
+                let edgeToDelete = null;
+
+                if (gIsDirected) {
+                    edgeToDelete = edges.get({
+                        filter: function (edge) {
+                            return (edge.from === source && edge.to === target);
+                        }
+                    });
+                } else {
+                    edgeToDelete = edges.get({
+                        filter: function (edge) {
+                            return (edge.from === source && edge.to === target) || (edge.from === target && edge.to === source);
+                        }
+                    });
+                }
                 
-                // ASSUMPTION: Directed graphs
-                let edgeToDelete = edges.get({
-                    filter: function (edge) {
-                        return (edge.from === source && edge.to === target);
-                    }
-                });
                 if (edgeToDelete.length > 0) {
                     edges.remove(edgeToDelete.map(edge => edge.id));
                 } else {
@@ -589,11 +525,11 @@
 
         Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, function (event) {
             initializeGraph(
-                event.detail.args.graph_data, 
-                event.detail.args.actions, 
+                event.detail.args.graphData,
                 event.detail.args.treeMode, 
-                event.detail.args.node_attribute_keys,
-                event.detail.args.graph_title
+                event.detail.args.isDirected,
+                event.detail.args.nodeAttributeKeys,
+                event.detail.args.graphTitle
             );
         });
 

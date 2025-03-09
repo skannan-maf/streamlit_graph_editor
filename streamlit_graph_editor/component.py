@@ -11,16 +11,38 @@ _graph_editor = components.declare_component(
     path=component_path
 )
 
-def graph_editor(graph_data, actions, treeMode, node_attribute_keys, title, key):
+def graph_editor(
+        graph_data,
+        tree_mode,
+        is_directed,
+        node_attribute_keys,
+        title,
+        key
+    ):
     '''
-    Friendly function that will serve our component
-    '''    
+    A friendly function that will serve the graph editor component
+    
+    ARGUMENTS
+    graph_data: Graph structure in JSON format
+        Example:
+        {
+            "nodes": [{"id": someid, "label": "somelabel", "attributes": {key: value, ...}}, ..... ], 
+            "edges": [{"from": "from_id", "to":"to_id"},...]
+        }
+    tree_mode: If true, then the editor will enforce "tree" semantics while editing the graph. Otherwise not. 
+    is_directed: If true, then the editor will render the graph as a Directed graph 
+    node_attribute_keys: A list of keys to be used as node attributes
+                         When user selects to edit node attributes, the editor will input the values for the 
+                         keys specified here
+    title: Title of the graph 
+    key: Widget key so that multiple instances of graph editors do not clash
+    '''
     edited_graph = _graph_editor(
-                        graph_data=graph_data, 
-                        actions=actions,
-                        treeMode=treeMode,
-                        node_attribute_keys=node_attribute_keys,
-                        graph_title=title,
+                        graphData=graph_data,
+                        treeMode=tree_mode,
+                        isDirected=is_directed,
+                        nodeAttributeKeys=node_attribute_keys,
+                        graphTitle=title,
                         key=key
                     )
     if edited_graph:
