@@ -1,5 +1,5 @@
 # streamlit_graph_editor
-A streamlit component that allows user to construct and/or edit networkx graphs<br>
+A streamlit component that allows user to construct and/or edit graphs (passed and returned as a JSON)<br>
 Refer to "app.py" to see how to use it<br>
 Supports directed and undirected graphs, as well as trees for now!<br>
 
