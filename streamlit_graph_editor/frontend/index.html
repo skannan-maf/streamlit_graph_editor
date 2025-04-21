@@ -8,13 +8,16 @@
 </head>
 <body>
     <h1 id="graph_title" style="text-align: center; margin-bottom: 10px; color:blue"></h1>
+    
     <div id="user_graph"></div>
+    
     <div id="contextMenu">
         <div class="menu-item" onclick="openPopup('addNode')">Add Node</div>
         <div class="menu-item" onclick="openPopup('deleteNode')">Delete Node</div>
         <div class="menu-item" onclick="openPopup('addEdge')">Add Edge</div>
         <div class="menu-item" onclick="openPopup('deleteEdge')">Delete Edge</div>
         <div class="menu-item" onclick="openPopup('editNodeAttributes')">Edit node attributes</div>
+        <div class="menu-item" onclick="openPopup('editEdgeAttributes')">Edit edge attributes</div>
     </div>
     
     <div id="popupForm">
@@ -29,10 +32,12 @@
         let nodes = null;
         let edges = null;
         let selectedNode = null;
+        let selectedEdge = null;
         let selectedAction = null;
         let gIsTreeMode = false; // Tree validation mode
         let gIsDirected = null;
         let gNodeAttributeKeys = null;
+        let gEdgeAttributeKeys = null;
         let max_chars = 8;
         let node_font_size = 32;
         let max_depth=5
@@ -111,10 +116,11 @@
                 graphData, 
                 treeMode, 
                 isDirected, 
-                nodeAttributeKeys, 
+                nodeAttributeKeys,
+                edgeAttributeKeys,
                 graphTitle="Untitled graph"
             ) {
-            
+            gEdgeAttributeKeys = edgeAttributeKeys;
             gIsTreeMode = treeMode;
             gNodeAttributeKeys = nodeAttributeKeys;
             gIsDirected = isDirected;
@@ -219,6 +225,7 @@
             network.on("oncontext", function (params) {
                 params.event.preventDefault();
                 selectedNode = network.getNodeAt(params.pointer.DOM);
+                selectedEdge = network.getEdgeAt(params.pointer.DOM);
                 showContextMenu(params.event);
             });
 
@@ -244,7 +251,9 @@
         }
 
         function openPopup(action) {
+            
             selectedAction = action;
+
             let popup = document.getElementById("popupForm");
             let form = document.getElementById("popupContent");
             let title = document.getElementById("popupTitle");
@@ -264,12 +273,13 @@
                 form.innerHTML += `<label>Source Node: </label><select id="sourceNode">${generateNodeOptions()}</select><br>`;
                 form.innerHTML += `<label>Target Node: </label><select id="targetNode">${generateNodeOptions()}</select><br>`;
             } else if (action === "deleteEdge") {
-                form.innerHTML += `<label>Select Source Node: </label><select id="edgeSource">${generateNodeOptions()}</select><br>`;
-                form.innerHTML += `<label>Select Target Node: </label><select id="edgeTarget">${generateNodeOptions()}</select><br>`;
+                //form.innerHTML += `<label>Select Source Node: </label><select id="edgeSource">${generateNodeOptions()}</select><br>`;
+                //form.innerHTML += `<label>Select Target Node: </label><select id="edgeTarget">${generateNodeOptions()}</select><br>`;
+                form.innerHTML += `<label>Select Edge: </label><select id="deleteEdge">${generateEdgeOptions()}</select><br>`;
             } else if (action === "editNodeAttributes") {
                 if (gNodeAttributeKeys.length === 0) {
                     // ✅ If no attribute keys, show message instead of inputs
-                    form.innerHTML = `<p style="color: gray; font-size: 20px;">No attribute specification passed.</p>`;
+                    form.innerHTML = `<p style="color: gray; font-size: 20px;">No node attribute specification passed.</p>`;
                 } else {
                     form.innerHTML += `<label>Select Node: </label><select id="attributeNode">${generateNodeOptions()}</select><br>`;
                     gNodeAttributeKeys.forEach(key => {
@@ -282,7 +292,24 @@
                     document.getElementById("attributeNode").addEventListener("change", fillNodeAttributePopup);
                     fillNodeAttributePopup();  // Auto-fill the first selected node's emails
                 }, 100);
+            } else if (action == 'editEdgeAttributes') {
+                if (gEdgeAttributeKeys.length === 0) {
+                    // ✅ If no attribute keys, show message instead of inputs
+                    form.innerHTML = `<p style="color: gray; font-size: 20px;">No edge attribute specification passed.</p>`;
+                } else {
+                    form.innerHTML += `<label>Select Edge: </label><select id="attributeEdge">${generateEdgeOptions()}</select><br>`;
+                    console.log("DEBUG: Edge attribute keys = ", gEdgeAttributeKeys)
+                    gEdgeAttributeKeys.forEach(key => {
+                        form.innerHTML += `<label>${key}: </label><input type="text" id="edge_attr_${key}" placeholder="Enter ${key}"><br>`;
+                    });
+                }
+                // Attach onchange event to update the input field when edge selection changes
+                setTimeout(() => {
+                    document.getElementById("attributeEdge").addEventListener("change", fillEdgeAttributePopup);
+                    fillEdgeAttributePopup();  // Auto-fill the first selected node's emails
+                }, 100);
             }
+
             popup.style.display = "block";
             
             // ✅ Attach submit event listener to properly handle ENTER
@@ -298,9 +325,37 @@
             // This function initializes the popup fields for node attributes with existing values if any
             let nodeId = document.getElementById("attributeNode").value;
             let node = nodes.get(nodeId);
-            //document.getElementById("nodeAttributes").value = node.attributes;
+
+            if (gNodeAttributeKeys.length == 0) {
+                return
+            }
+
+            if (node == null) {
+                console.log("fillNodeAttributePopup: Node not found")
+                return
+            }
+
             gNodeAttributeKeys.forEach(key => {
                 document.getElementById(`node_attr_${key}`).value = node.attributes?.[key] || null;
+            });
+        }
+
+        function fillEdgeAttributePopup() {
+            // This function initializes the popup fields for edge attributes with existing values if any
+            let edgeId = document.getElementById("attributeEdge").value;
+            let edge = edges.get(edgeId);
+
+            if (gEdgeAttributeKeys.length == 0) {
+                return
+            }
+
+            if (edge == null) {
+                console.log("fillEdgeAttributePopup: Edge not found")
+                return
+            }
+
+            gEdgeAttributeKeys.forEach(key => {
+                document.getElementById(`edge_attr_${key}`).value = edge.attributes?.[key] || null;
             });
         }
 
@@ -321,6 +376,25 @@
                 node.attributes = attributes;
                 node.title = generateTooltip(node);  // ✅ Update tooltip with latest attributes
                 nodes.update(node);
+            }
+        }
+
+        function setEdgeAttributes() {
+            let edgeId = document.getElementById("attributeEdge").value;
+            let edge = edges.get(edgeId);
+
+            if (edge) {
+                let attributes = {};
+
+                // ✅ Read each attribute from the pop-up form
+                gEdgeAttributeKeys.forEach(key => {
+                    let value = document.getElementById(`edge_attr_${key}`).value.trim();
+                    attributes[key] = value !== "" ? value : null;  // ✅ Use null if empty
+                });
+
+                // ✅ Store attributes in the edge
+                edge.attributes = attributes;
+                edges.update(edge);
             }
         }
 
@@ -357,6 +431,25 @@
             options += include_null ? `<option value="">(None)</option>` : "";
             
             options += nodesArray.map(n => `<option value="${n.id}">${n.label_full}</option>`).join("");
+            
+            return options;
+        }
+
+        function generateEdgeOptions(include_null=false) {
+            let options = "";
+            let edgesArray = edges.get();
+
+            if (selectedEdge) {
+                let selectedEdgeObj = edgesArray.find(e => e.id === selectedEdge);
+                if (selectedEdgeObj) {
+                    options += `<option value="${selectedEdgeObj.id}" selected>${selectedEdgeObj.from} -> ${selectedEdgeObj.to}</option>`;
+                    edgesArray = edgesArray.filter(e => e.id !== selectedEdge);
+                }
+            }
+            
+            options += include_null ? `<option value="">(None)</option>` : "";
+            
+            options += edgesArray.map(e => `<option value="${e.id}">${e.from} -> ${e.to}</option>`).join("");
             
             return options;
         }
@@ -462,8 +555,20 @@
 
             } else if (selectedAction === "deleteEdge") {
 
-                let source = document.getElementById("edgeSource").value;
-                let target = document.getElementById("edgeTarget").value;
+                //let source = document.getElementById("edgeSource").value;
+                //let target = document.getElementById("edgeTarget").value;
+                
+                let edgeId = document.getElementById("deleteEdge").value;
+                
+                let edge = edges.get(edgeId);
+                
+                if (edge == null) {
+                    alert("🚨 No edge found for deletion!");
+                    return;
+                }
+
+                source = edge.from;
+                target = edge.to;
                 let edgeToDelete = null;
 
                 if (gIsDirected) {
@@ -487,6 +592,8 @@
                 }
             } else if (selectedAction == 'editNodeAttributes') {
                 setNodeAttributes();
+            } else if (selectedAction == 'editEdgeAttributes') {
+                setEdgeAttributes();
             }
 
             //
@@ -529,6 +636,7 @@
                 event.detail.args.treeMode, 
                 event.detail.args.isDirected,
                 event.detail.args.nodeAttributeKeys,
+                event.detail.args.edgeAttributeKeys,
                 event.detail.args.graphTitle
             );
         });

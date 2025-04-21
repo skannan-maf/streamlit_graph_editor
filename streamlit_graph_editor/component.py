@@ -16,6 +16,7 @@ def graph_editor(
         tree_mode,
         is_directed,
         node_attribute_keys,
+        edge_attribute_keys,
         title,
         key
     ):
@@ -42,6 +43,7 @@ def graph_editor(
                         treeMode=tree_mode,
                         isDirected=is_directed,
                         nodeAttributeKeys=node_attribute_keys,
+                        edgeAttributeKeys=edge_attribute_keys,
                         graphTitle=title,
                         key=key
                     )
@@ -52,7 +54,7 @@ def graph_editor(
 # 🔹 Helper function: Convert `networkx.Graph` to JSON format for `vis-network`
 def from_networkx(graph: nx.DiGraph):
     nodes = [{"id": str(n), "label": str(n), "attributes": graph.nodes[n] } for n in graph.nodes()]
-    edges = [{"from": str(u), "to": str(v)} for u, v in graph.edges()]
+    edges = [{"from": str(u), "to": str(v), "attributes": graph.edges[u, v]} for u, v in graph.edges()]
     return {"nodes": nodes, "edges": edges}
 
 # 🔹 Helper function: Convert JSON output from Streamlit component back to `networkx.Graph`
@@ -61,5 +63,5 @@ def to_networkx(graph_data):
     for node in graph_data["nodes"]:
         G.add_node(node["id"], **(node.get("attributes") or {}))
     for edge in graph_data["edges"]:
-        G.add_edge(edge["from"], edge["to"])
+        G.add_edge(edge["from"], edge["to"], **(edge.get("attributes") or {}))
     return G
