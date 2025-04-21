@@ -3,5 +3,4 @@ A streamlit component that allows user to construct and/or edit graphs (passed a
 Refer to "app.py" to see how to use it<br>
 Supports directed and undirected graphs, as well as trees for now!<br>
 
-<img width="420" alt="image" src="https://github.com/user-attachments/assets/66d33ff6-f0e6-4414-ae41-affedb8607ed" />
-
+<img width="672" alt="image" src="https://github.com/user-attachments/assets/311fae14-f71d-4790-b9d8-e45731a4941c" />
